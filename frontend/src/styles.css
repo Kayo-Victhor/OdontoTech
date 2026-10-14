@@ -52,7 +52,14 @@ button { cursor: pointer; }
 .submit-button:hover { background: #078d89; transform: translateY(-1px); }
 .forgot-password { display: block; margin: 20px auto 0; padding: 3px; border: 0; background: transparent; color: #079f9a; font-size: .9rem; font-weight: 600; }
 .forgot-password:hover { text-decoration: underline; }
+.login-switch { margin: 13px 0 0; text-align: center; color: #6a7b91; font-size: .86rem; }
+.login-switch button { padding: 0; border: 0; background: transparent; color: #079f9a; font: inherit; font-weight: 700; }
+.login-switch button:hover { text-decoration: underline; }
 .form-message { text-align: center; margin: 20px 0 0; color: #087c78; font-size: .86rem; line-height: 1.45; }
+.login-header--compact { margin-bottom: 17px; }
+.registration-form { padding-top: 23px; padding-bottom: 24px; }
+.registration-form .field { margin-bottom: 13px; }
+.registration-form .field-control { min-height: 48px; }
 
 @media (max-width: 760px) {
   .login-page { display: block; }

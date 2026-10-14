@@ -17,7 +17,7 @@ const profiles: Array<{ label: Profile; icon: typeof UserRound }> = [
   { label: 'Paciente', icon: Stethoscope },
 ];
 
-export function LoginPage() {
+export function LoginPage({ onRegister }: { onRegister: () => void }) {
   const [profile, setProfile] = useState<Profile>('Administrador');
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -90,6 +90,7 @@ export function LoginPage() {
 
           <button className="submit-button" type="submit">Entrar</button>
           <button className="forgot-password" type="button">Esqueceu a palavra-passe?</button>
+          <p className="login-switch">Ainda não tem uma conta? <button onClick={onRegister} type="button">Registre-se</button></p>
 
           {isSubmitted && (
             <p aria-live="polite" className="form-message">

@@ -64,6 +64,26 @@ button:disabled { cursor: wait; opacity: .65; }
 .registration-form { padding-top: 23px; padding-bottom: 24px; }
 .registration-form .field { margin-bottom: 13px; }
 .registration-form .field-control { min-height: 48px; }
+.field-hint { font-size: .76rem; color: #6a7b91; font-weight: 400; line-height: 1.5; }
+.field-error { font-size: .8rem; color: #a33139; font-weight: 400; }
+.registration-success { margin: 0 0 20px; }
+.admin-page { max-width: 1100px; margin: auto; padding: 36px 24px; }
+.admin-header { display: flex; justify-content: space-between; align-items: center; gap: 20px; margin-bottom: 30px; }
+.admin-header h1 { font-size: 1.5rem; font-weight: 650; margin-top: 12px; }
+.admin-page a, .session-state a, .text-button { color: #079f9a; text-decoration: underline; }
+.admin-columns { display: grid; grid-template-columns: minmax(300px, 420px) minmax(0, 1fr); gap: 36px; align-items: start; }
+.admin-page h2 { font-size: 1.15rem; font-weight: 650; margin-bottom: 20px; }
+.account-fields { border: 0; padding: 0; margin: 0; min-width: 0; }
+.field select { min-height: 48px; border: 1px solid #c9d6e2; border-radius: 10px; background: white; padding: 0 12px; color: #10284f; font-size: .95rem; }
+.users-section { min-width: 0; }
+.users-table-container { overflow-x: auto; }
+.users-table { border-collapse: collapse; width: 100%; font-size: .85rem; }
+.users-table th, .users-table td { padding: 14px 8px; border-bottom: 1px solid #dce5ee; text-align: left; }
+.users-table th { color: #526888; font-weight: 600; }
+.users-table td span { display: block; margin-top: 4px; font-size: .8rem; color: #6a7b91; overflow-wrap: anywhere; }
+.pagination { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 20px; font-size: .85rem; }
+.pagination button { padding: 8px 10px; border: 1px solid #c9d6e2; border-radius: 8px; background: white; }
+@media (max-width: 850px) { .admin-columns { grid-template-columns: 1fr; } .admin-header { align-items: start; flex-direction: column; } }
 
 @media (max-width: 760px) {
   .login-page { display: block; }

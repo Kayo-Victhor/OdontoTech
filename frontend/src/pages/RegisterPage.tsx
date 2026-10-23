@@ -1,9 +1,28 @@
-import { useState, type FormEvent } from "react";
-import { CalendarDays, Eye, EyeOff, LockKeyhole, Mail, Phone, UserRound } from "lucide-react";
+import { useRef, useState, type FormEvent } from "react";
+import { CalendarDays, Mail, Phone, UserRound } from "lucide-react";
+import { PasswordFields } from '../components/PasswordFields';
+import { accountErrorMessage, accountFields, registerPatient } from '../services/accounts';
 
-export function RegisterPage({ onLogin }: { onLogin: () => void }) {
-  const [submitted, setSubmitted] = useState(false);
-  const [passwordVisible, setPasswordVisible] = useState(false);
+export function RegisterPage({ onLogin, onRegistered }: { onLogin: () => void; onRegistered: () => void }) {
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState('');
+  const submitting = useRef(false);
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (submitting.current) return;
+    const form = new FormData(event.currentTarget);
+    const fields = accountFields(form);
+    if (fields.password !== fields.confirmPassword) { setError('As senhas devem coincidir.'); return; }
+    submitting.current = true; setPending(true); setError('');
+    try {
+      await registerPatient({ ...fields,
+        ...(form.get('phone') ? { phone: String(form.get('phone')).trim() } : {}),
+        ...(form.get('birthDate') ? { birthDate: String(form.get('birthDate')) } : {}),
+      });
+      onRegistered();
+    } catch (failure) { setError(accountErrorMessage(failure)); }
+    finally { submitting.current = false; setPending(false); }
+  }
   return (
     <main className="login-page">
       <aside className="brand-panel" aria-hidden="true">
@@ -27,51 +46,39 @@ export function RegisterPage({ onLogin }: { onLogin: () => void }) {
         </div>
         <form
           className="login-form registration-form"
-          onSubmit={(e: FormEvent) => {
-            e.preventDefault();
-            setSubmitted(true);
-          }}
+          onSubmit={handleSubmit}
         >
           <label className="field">
             <span>Nome completo</span>
             <span className="field-control">
               <UserRound size={19} />
-              <input name="name" required />
+              <input name="name" autoComplete="name" minLength={2} maxLength={120} required />
             </span>
           </label>
           <label className="field">
             <span>Telefone</span>
             <span className="field-control">
               <Phone size={19} />
-              <input name="phone" required type="tel" />
+              <input name="phone" autoComplete="tel" maxLength={30} type="tel" />
             </span>
           </label>
           <label className="field">
             <span>E-mail</span>
             <span className="field-control">
               <Mail size={19} />
-              <input name="email" required type="email" />
+              <input name="email" autoComplete="email" maxLength={254} required type="email" />
             </span>
           </label>
           <label className="field">
             <span>Data de nascimento</span>
             <span className="field-control">
               <CalendarDays size={19} />
-              <input name="birthDate" required type="date" />
+              <input name="birthDate" autoComplete="bday" max={new Date().toISOString().slice(0, 10)} type="date" />
             </span>
           </label>
-          <label className="field">
-            <span>Palavra-passe</span>
-            <span className="field-control">
-              <LockKeyhole size={19} />
-              <input autoComplete="new-password" name="password" required type={passwordVisible ? "text" : "password"} />
-              <button aria-label={passwordVisible ? "Ocultar palavra-passe" : "Mostrar palavra-passe"} className="password-toggle" onClick={() => setPasswordVisible((visible) => !visible)} type="button">
-                {passwordVisible ? <EyeOff size={19} /> : <Eye size={19} />}
-              </button>
-            </span>
-          </label>
-          <button className="submit-button" type="submit">
-            Criar conta
+          <PasswordFields />
+          <button className="submit-button" disabled={pending} type="submit">
+            {pending ? 'A criar conta…' : 'Criar conta'}
           </button>
           <p className="login-switch">
             Já tem uma conta?{" "}
@@ -79,11 +86,7 @@ export function RegisterPage({ onLogin }: { onLogin: () => void }) {
               Entrar
             </button>
           </p>
-          {submitted && (
-            <p className="form-message">
-              O seu cadastro será concluído quando a API estiver ligada.
-            </p>
-          )}
+          {error && <p role="alert" className="form-message form-message--error">{error}</p>}
         </form>
       </section>
     </main>

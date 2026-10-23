@@ -1,6 +1,7 @@
 import { useRef, useState, type FormEvent } from 'react';
 import { useAuth } from '../auth/AuthProvider';
 import { authErrorMessage } from '../services/api';
+import { useLocation } from 'react-router-dom';
 import {
   Eye,
   EyeOff,
@@ -26,6 +27,7 @@ export function LoginPage({ onRegister }: { onRegister: () => void }) {
   const submitting = useRef(false);
   const [error, setError] = useState('');
   const { login } = useAuth();
+  const location = useLocation();
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -60,6 +62,7 @@ export function LoginPage({ onRegister }: { onRegister: () => void }) {
         </div>
 
         <form className="login-form" onSubmit={handleSubmit}>
+          {location.state?.registered === true && <p role="status" className="form-message registration-success">Conta criada com sucesso. Entre com o seu e-mail e senha.</p>}
           <fieldset className="profile-select">
             <legend className="sr-only">Perfil de acesso</legend>
             {profiles.map(({ label, icon: Icon }) => (

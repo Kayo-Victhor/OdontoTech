@@ -5,6 +5,8 @@ export interface AuthConfig {
   production: boolean;
   loginLimit: number;
   loginWindowMs: number;
+  registrationLimit?: number;
+  registrationWindowMs?: number;
 }
 function positiveInteger(value: string | undefined, fallback: number, name: string) {
   const number = value === undefined ? fallback : Number(value);
@@ -29,5 +31,7 @@ export function readAuthConfig(env: NodeJS.ProcessEnv = process.env): AuthConfig
     expiresInSeconds: positiveInteger(env.JWT_EXPIRES_IN_SECONDS, 3600, 'JWT_EXPIRES_IN_SECONDS'),
     loginLimit: positiveInteger(env.LOGIN_RATE_LIMIT_MAX, 10, 'LOGIN_RATE_LIMIT_MAX'),
     loginWindowMs: positiveInteger(env.LOGIN_RATE_LIMIT_WINDOW_MS, 900000, 'LOGIN_RATE_LIMIT_WINDOW_MS'),
+    registrationLimit: positiveInteger(env.REGISTER_RATE_LIMIT_MAX, 5, 'REGISTER_RATE_LIMIT_MAX'),
+    registrationWindowMs: positiveInteger(env.REGISTER_RATE_LIMIT_WINDOW_MS, 900000, 'REGISTER_RATE_LIMIT_WINDOW_MS'),
   };
 }

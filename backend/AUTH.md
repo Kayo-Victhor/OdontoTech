@@ -22,11 +22,25 @@ JWT assinado com HS256, `sub`, `iat`, `exp`, emissor `odontotech-api` e audiênc
 
 Todas as operações que alteram estado exigem `Origin` exatamente igual a `FRONTEND_ORIGIN` e `X-OdontoTech-CSRF: 1`. O cabeçalho customizado exige preflight em origens diferentes; CORS só permite a origem configurada com credenciais. Esta política também se aplica ao login para evitar login CSRF. Clientes de teste ou integração devem enviar os dois cabeçalhos. Respostas de autenticação usam Cache-Control: no-store.
 
-O middleware `authenticate` confirma a identidade atual no banco. `authorize(...roles)` deve vir depois dele nas futuras rotas privadas. Proteção de rotas React não substitui esses middlewares. Não há endpoints de cadastro neste bloco. A página de cadastro permanece apenas visual; os painéis de cada perfil apresentam uma entrada provisória, sem módulos de gestão.
+O middleware `authenticate` confirma a identidade atual no banco. `authorize(...roles)` vem depois dele nas rotas privadas. Proteção de rotas React não substitui esses middlewares. O cadastro de pacientes e a gestão administrativa foram adicionados no Bloco 3; os restantes painéis continuam provisórios.
+
+## Cadastro de pacientes e gestão de contas
+
+- `POST /auth/register`: aceita estritamente `name`, `email`, `password`, `confirmPassword`, `phone` e `birthDate`. Telefone e nascimento são opcionais; quando enviados são validados. Nascimento usa `YYYY-MM-DD`, data real e não futura. O backend fixa `PATIENT` e `ACTIVE` e cria sempre `PatientProfile`. Sucesso: 201, `{ user: { id, name, role } }`, sem cookie ou login automático. O frontend encaminha ao login com confirmação de sucesso.
+- `POST /admin/users`: exige sessão ativa e papel ADMIN atual no banco. Campos comuns: `name`, `email`, `password`, `confirmPassword`, `role`. Só aceita `RECEPTIONIST` ou `DENTIST`. Dentistas exigem `croNumber` e `croState`; `specialty` é opcional. O CRO passa por validação estrutural (estado de duas letras, número até 30 caracteres), sem afirmar que a inscrição profissional foi consultada. Rececionistas não recebem perfil adicional. ADMIN continua exclusivo do seed.
+- `GET /admin/users?page=1&pageSize=10`: exclusivo de ADMIN. Páginas de 1 a 50 contas com `id`, `name`, `email`, `role`, `status`, `createdAt`, mais `total`, `page` e `pageSize`. Não inclui perfis clínicos nem hashes. A ordenação é por criação e identificador.
+
+Novas senhas têm 12 a 128 caracteres, incluindo maiúscula, minúscula, número e símbolo. O e-mail é aparado e convertido para minúsculas; a senha é preservada sem aparar. A confirmação é obrigatória na API e na interface. Os campos desconhecidos são rejeitados com 400, incluindo tentativas de enviar estado, IDs, hash ou perfil privilegiado ao cadastro público. Conflitos de e-mail ou CRO retornam 409 sem detalhes Prisma/SQL. Falhas inesperadas retornam 500 genérico.
+
+As criações usam uma única operação Prisma com escrita aninhada transacional. Falhar ao criar o perfil desfaz a criação da conta; a restrição UNIQUE continua a garantir unicidade perante pedidos concorrentes. O código não remove contas para resolver conflitos. O schema e a migration inicial não foram alterados.
+
+Aceda a `/admin`, depois a “Gerir utilizadores” para abrir `/admin/utilizadores`. A interface só permite criar rececionistas e dentistas; não há eliminação, mudança de papel ou suspensão de contas neste bloco. Senhas iniciais ficam apenas na memória do formulário e são limpas após sucesso.
 
 ## Limitação de tentativas e produção
 
 `express-rate-limit` limita tentativas por IP, incluindo entradas inválidas, com janela e limite configuráveis. A configuração atual usa o armazenamento em memória da biblioteca e destina-se a um único processo. Reiniciar o processo limpa os contadores; várias réplicas exigem um armazenamento partilhado antes da publicação. Não é uma proteção distribuída. O servidor não confia automaticamente em `X-Forwarded-For`; numa implantação atrás de proxy deve-se configurar a lista precisa de proxies confiáveis.
+
+O cadastro público usa a mesma infraestrutura com contador separado do login: `REGISTER_RATE_LIMIT_MAX=5` e `REGISTER_RATE_LIMIT_WINDOW_MS=900000` por padrão. Login e cadastro preservam CORS, CSRF e respostas sem cache.
 
 Em produção configure `NODE_ENV=production`, `FRONTEND_ORIGIN=https://...` e HTTPS. Sirva frontend e API no mesmo site, preferencialmente através do caminho `/api`; configure o proxy de produção para esse caminho, pois o proxy do Vite só existe em desenvolvimento. SameSite=Lax não serve uma implantação entre sites distintos sem adaptação da arquitetura e da proteção CSRF.
 

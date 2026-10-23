@@ -41,11 +41,11 @@ button:disabled { cursor: wait; opacity: .65; }
 .login-header h1 { margin: 8px 0 0; font-size: 1rem; font-weight: 450; letter-spacing: -.35px; color: #3c5172; }
 
 .login-form { background: #fff; border: 1px solid #dce5ee; border-radius: 15px; padding: 28px 30px 30px; box-shadow: 0 8px 28px rgba(24, 54, 92, .06); }
-.profile-select { border: 1px solid #cddae6; border-radius: 11px; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); overflow: hidden; margin: 0 0 23px; }
+.profile-select { border: 1px solid #cddae6; border-radius: 11px; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); overflow: hidden; margin: 0 0 23px; }
 .profile-option { border: 0; border-right: 1px solid #cddae6; min-height: 78px; background: #fbfdff; color: #526888; display: grid; align-content: center; justify-items: center; gap: 6px; font-size: .82rem; font-weight: 520; transition: background .18s, color .18s; }
 .profile-option:last-child { border-right: 0; }
 .profile-option:hover { background: #effbfa; }
-.profile-option--active { background: #079f9a; color: #fff; }
+.profile-option--active, .profile-option--active:hover { background: #079f9a; color: #fff; }
 .field { display: grid; gap: 8px; margin-bottom: 17px; color: #10284f; font-size: .9rem; font-weight: 700; }
 .field-control { display: flex; align-items: center; gap: 11px; min-height: 52px; padding: 0 15px; border: 1px solid #c9d6e2; border-radius: 10px; color: #8798ae; transition: border-color .18s, box-shadow .18s; }
 .field-control:focus-within { border-color: #079f9a; box-shadow: 0 0 0 3px rgba(7, 159, 154, .13); }
@@ -148,6 +148,9 @@ button:disabled { cursor: wait; opacity: .65; }
 }
 
 @media (max-width: 760px) {
+  .profile-select { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .profile-option:nth-child(even) { border-right: 0; }
+  .profile-option:nth-child(-n+2) { border-bottom: 1px solid #cddae6; }
   .login-page { display: block; }
   .brand-panel { position: absolute; inset: 0 0 auto; height: 166px; min-height: 0; }
   .brand-panel__orb { width: 520px; height: 280px; left: -120px; top: -125px; }

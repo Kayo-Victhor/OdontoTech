@@ -40,6 +40,19 @@ test('login normaliza e-mail, verifica Argon2id e emite cookie; JSON só tem dad
   assert.deepEqual(Object.keys(claims).sort(), ['aud', 'exp', 'iat', 'iss', 'sub']);
   assert.equal(s.getUser().passwordHash, hash);
 });
+for (const role of ['ADMIN', 'RECEPTIONIST', 'DENTIST', 'PATIENT'] as const) {
+  test(`login de ${role} verifica credenciais próprias e ignora perfil divergente do cliente`, async () => {
+    const s = setup();
+    const user = { ...s.getUser(), id: role.toLowerCase(), role, email: `${role.toLowerCase()}@example.test` };
+    s.setUser(user);
+    const response = await s.login({ email: user.email, password, role: role === 'ADMIN' ? 'DENTIST' : 'ADMIN' }).expect(200);
+    assert.deepEqual(response.body.user, { id: user.id, name: user.name, role });
+    const me = await request(s.app).get('/auth/me').set('Cookie', sessionCookie(response)).expect(200);
+    assert.equal(me.body.user.role, role);
+    assert.equal(me.body.user.id, user.id);
+    await s.login({ email: user.email, password: 'incorrect', role: 'ADMIN' }).expect(401);
+  });
+}
 test('senha incorreta, e-mail inexistente, conta inativa e hash inválido recebem o mesmo 401 sem cookie', async () => {
   const s = setup();
   for (const body of [{ email: 'admin@example.test', password: 'incorrect' }, { email: 'missing@example.test', password }]) {

@@ -1,5 +1,5 @@
 import { useRef, useState, type FormEvent } from 'react';
-import { useAuth } from '../auth/AuthProvider';
+import { useAuth, type UserRole } from '../auth/AuthProvider';
 import { authErrorMessage } from '../services/api';
 import { useLocation } from 'react-router-dom';
 import {
@@ -12,16 +12,16 @@ import {
   UsersRound,
 } from 'lucide-react';
 
-type Profile = 'Administrador' | 'Recepção' | 'Paciente';
-
-const profiles: Array<{ label: Profile; icon: typeof UserRound }> = [
-  { label: 'Administrador', icon: UserRound },
-  { label: 'Recepção', icon: UsersRound },
-  { label: 'Paciente', icon: Stethoscope },
+const profiles: Array<{ role: UserRole; label: string; icon: typeof UserRound }> = [
+  { role: 'ADMIN', label: 'Administrador', icon: UserRound },
+  { role: 'RECEPTIONIST', label: 'Recepção', icon: UsersRound },
+  { role: 'DENTIST', label: 'Dentista', icon: Stethoscope },
+  { role: 'PATIENT', label: 'Paciente', icon: UserRound },
 ];
 
 export function LoginPage({ onRegister }: { onRegister: () => void }) {
-  const [profile, setProfile] = useState<Profile>('Administrador');
+  // Preferência visual; a sessão e o destino usam exclusivamente o perfil da API.
+  const [profile, setProfile] = useState<UserRole>('ADMIN');
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [pending, setPending] = useState(false);
   const submitting = useRef(false);
@@ -65,12 +65,13 @@ export function LoginPage({ onRegister }: { onRegister: () => void }) {
           {location.state?.registered === true && <p role="status" className="form-message registration-success">Conta criada com sucesso. Entre com o seu e-mail e senha.</p>}
           <fieldset className="profile-select">
             <legend className="sr-only">Perfil de acesso</legend>
-            {profiles.map(({ label, icon: Icon }) => (
+            {profiles.map(({ role, label, icon: Icon }) => (
               <button
-                className={profile === label ? 'profile-option profile-option--active' : 'profile-option'}
-                key={label}
-                aria-pressed={profile === label}
-                onClick={() => setProfile(label)}
+                className={profile === role ? 'profile-option profile-option--active' : 'profile-option'}
+                key={role}
+                value={role}
+                aria-pressed={profile === role}
+                onClick={() => setProfile(role)}
                 type="button"
               >
                 <Icon aria-hidden="true" size={20} strokeWidth={2} />

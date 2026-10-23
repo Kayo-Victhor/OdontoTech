@@ -14,14 +14,50 @@ function mount(path = '/login') {
   return render(<MemoryRouter initialEntries={[path]}><AuthProvider><App /><Location /></AuthProvider></MemoryRouter>);
 }
 function noSession() { return vi.spyOn(api, 'get').mockRejectedValue(unauthorized); }
-async function credentials() {
+async function credentials(email = 'admin@example.test') {
   const user = userEvent.setup();
-  await user.type(await screen.findByLabelText('E-mail'), 'admin@example.test');
+  await user.type(await screen.findByLabelText('E-mail'), email);
   await user.type(screen.getByLabelText('Palavra-passe', { selector: 'input' }), 'TestPassword!123');
   return user;
 }
 
 describe('autenticação integrada', () => {
+  const profiles = [
+    ['ADMIN', 'Administrador', '/admin'],
+    ['RECEPTIONIST', 'Recepção', '/recepcao'],
+    ['DENTIST', 'Dentista', '/dentista'],
+    ['PATIENT', 'Paciente', '/paciente'],
+  ] as const;
+  it('apresenta quatro opções com os valores reais e seleção exclusivamente visual', async () => {
+    noSession(); mount(); await screen.findByLabelText('E-mail');
+    for (const [role, label] of profiles) {
+      const button = screen.getByRole('button', { name: label, exact: true });
+      expect(button.getAttribute('value')).toBe(role);
+      await userEvent.click(button);
+      expect(button.getAttribute('aria-pressed')).toBe('true');
+      expect(screen.getByTestId('path').textContent).toBe('/login');
+    }
+  });
+  it.each(profiles)('login de %s (%s) encaminha para %s', async (role, label, path) => {
+    const get = noSession(); const session = { id: role.toLowerCase(), name: `Conta ${label}`, role };
+    const post = vi.spyOn(api, 'post').mockResolvedValue({ data: { user: session } });
+    const email = `${role.toLowerCase()}@example.test`;
+    mount(); const user = await credentials(email); await user.click(screen.getByRole('button', { name: label, exact: true }));
+    get.mockResolvedValue({ data: { user: session } }); await user.click(screen.getByRole('button', { name: 'Entrar', exact: true }));
+    await screen.findByText(`Olá, Conta ${label}`);
+    expect(screen.getByTestId('path').textContent).toBe(path);
+    expect(post).toHaveBeenCalledWith('/auth/login', { email, password: 'TestPassword!123' });
+    if (role === 'DENTIST') expect(screen.getByRole('link', { name: 'Abrir agenda' }).getAttribute('href')).toBe('/agenda');
+  });
+  it.each(profiles)('selecionar outro perfil não altera o destino nem os privilégios de %s', async (role, label, path) => {
+    const get = noSession(); const session = { id: role.toLowerCase(), name: `Conta ${label}`, role };
+    vi.spyOn(api, 'post').mockResolvedValue({ data: { user: session } });
+    mount(); const user = await credentials();
+    await user.click(screen.getByRole('button', { name: role === 'ADMIN' ? 'Dentista' : 'Administrador', exact: true }));
+    get.mockResolvedValue({ data: { user: session } }); await user.click(screen.getByRole('button', { name: 'Entrar', exact: true }));
+    await screen.findByText(`Olá, Conta ${label}`); expect(screen.getByTestId('path').textContent).toBe(path);
+    expect(Boolean(screen.queryByRole('link', { name: 'Gerir utilizadores' }))).toBe(role === 'ADMIN');
+  });
   it('envia somente credenciais, mostra carregamento e usa o papel do servidor', async () => {
     const get = noSession();
     let resolveLogin!: (value: any) => void;

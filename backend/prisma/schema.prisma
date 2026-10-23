@@ -1,0 +1,152 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  RECEPTIONIST
+  DENTIST
+  PATIENT
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum AppointmentStatus {
+  SCHEDULED
+  CONFIRMED
+  WAITING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+model User {
+  id                  String             @id @default(cuid())
+  name                String
+  email               String             @unique
+  passwordHash        String
+  role                UserRole
+  status              UserStatus         @default(ACTIVE)
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+  patientProfile      PatientProfile?
+  dentistProfile      DentistProfile?
+  createdAppointments Appointment[]      @relation("AppointmentCreator")
+  authoredRecords     ClinicalRecord[]   @relation("ClinicalRecordAuthor")
+  clinicalAddenda     ClinicalAddendum[] @relation("ClinicalAddendumAuthor")
+}
+
+model PatientProfile {
+  id             String        @id @default(cuid())
+  userId         String        @unique
+  birthDate      DateTime?     @db.Date
+  phone          String?
+  documentNumber String?       @unique
+  addressLine1   String?
+  addressLine2   String?
+  city           String?
+  state          String?
+  postalCode     String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  user           User          @relation(fields: [userId], references: [id], onDelete: Restrict)
+  appointments   Appointment[] @relation("AppointmentPatient")
+}
+
+model DentistProfile {
+  id           String        @id @default(cuid())
+  userId       String        @unique
+  croNumber    String
+  croState     String
+  specialty    String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  user         User          @relation(fields: [userId], references: [id], onDelete: Restrict)
+  appointments Appointment[] @relation("AppointmentDentist")
+
+  @@unique([croNumber, croState])
+}
+
+model Procedure {
+  id                       String              @id @default(cuid())
+  name                     String
+  description              String?             @db.Text
+  estimatedDurationMinutes Int
+  isActive                 Boolean             @default(true)
+  createdAt                DateTime            @default(now())
+  updatedAt                DateTime            @updatedAt
+  clinicalProcedures       ClinicalProcedure[]
+}
+
+model Appointment {
+  id                 String            @id @default(cuid())
+  patientId          String
+  dentistId          String
+  createdById        String
+  startAt            DateTime
+  endAt              DateTime
+  status             AppointmentStatus @default(SCHEDULED)
+  reason             String?           @db.Text
+  cancellationReason String?           @db.Text
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+  patient            PatientProfile    @relation("AppointmentPatient", fields: [patientId], references: [id], onDelete: Restrict)
+  dentist            DentistProfile    @relation("AppointmentDentist", fields: [dentistId], references: [id], onDelete: Restrict)
+  createdBy          User              @relation("AppointmentCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  clinicalRecord     ClinicalRecord?
+
+  @@index([dentistId, startAt])
+  @@index([patientId, startAt])
+  @@index([status, startAt])
+}
+
+model ClinicalRecord {
+  id            String              @id @default(cuid())
+  appointmentId String              @unique
+  authorId      String
+  notes         String              @db.Text
+  finalizedAt   DateTime?
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+  appointment   Appointment         @relation(fields: [appointmentId], references: [id], onDelete: Restrict)
+  author        User                @relation("ClinicalRecordAuthor", fields: [authorId], references: [id], onDelete: Restrict)
+  procedures    ClinicalProcedure[]
+  addenda       ClinicalAddendum[]
+}
+
+model ClinicalProcedure {
+  id                    String         @id @default(cuid())
+  clinicalRecordId      String
+  procedureId           String?
+  procedureNameSnapshot String
+  toothOrRegion         String
+  descriptionSnapshot   String?        @db.Text
+  notes                 String?        @db.Text
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime       @updatedAt
+  clinicalRecord        ClinicalRecord @relation(fields: [clinicalRecordId], references: [id], onDelete: Restrict)
+  procedure             Procedure?     @relation(fields: [procedureId], references: [id], onDelete: SetNull)
+
+  @@index([clinicalRecordId])
+}
+
+model ClinicalAddendum {
+  id               String         @id @default(cuid())
+  clinicalRecordId String
+  authorId         String
+  content          String         @db.Text
+  createdAt        DateTime       @default(now())
+  clinicalRecord   ClinicalRecord @relation(fields: [clinicalRecordId], references: [id], onDelete: Restrict)
+  author           User           @relation("ClinicalAddendumAuthor", fields: [authorId], references: [id], onDelete: Restrict)
+
+  @@index([clinicalRecordId, createdAt])
+}

@@ -5,6 +5,7 @@ import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
 import { authErrorMessage } from './services/api';
 import { AdminUsersPage } from './pages/AdminUsersPage';
+import { AgendaPage } from './pages/AgendaPage';
 
 function SessionCheck({ children }: { children: ReactNode }) {
   const { initializing, initializationError, retry } = useAuth();
@@ -30,12 +31,14 @@ function PrivatePage({ role, children }: { role: UserRole; children?: ReactNode 
     setPending(true); setError('');
     try { await logout(); } catch (failure) { setError(authErrorMessage(failure)); } finally { setPending(false); }
   }
-  return <main className="session-state"><p className="brand-name">Odonto<span>Tech</span></p><h1>Olá, {user.name}</h1><p>Área de {roleNames[user.role]}</p>{role === 'ADMIN' ? <Link to="/admin/utilizadores">Gerir utilizadores</Link> : <p>O seu painel estará disponível em breve.</p>}<button className="submit-button" disabled={pending} onClick={handleLogout}>{pending ? 'A sair…' : 'Sair'}</button>{error && <p role="alert">{error}</p>}</main>;
+  return <main className="session-state"><p className="brand-name">Odonto<span>Tech</span></p><h1>Olá, {user.name}</h1><p>Área de {roleNames[user.role]}</p><Link to="/agenda">Abrir agenda</Link>{role === 'ADMIN' && <Link to="/admin/utilizadores">Gerir utilizadores</Link>}<button className="submit-button" disabled={pending} onClick={handleLogout}>{pending ? 'A sair…' : 'Sair'}</button>{error && <p role="alert">{error}</p>}</main>;
 }
+function AgendaRoute() { const { user } = useAuth(); return user ? <AgendaPage /> : <Navigate to="/login" replace />; }
 export function App() {
   return <SessionCheck><Routes>
     <Route path="/login" element={<PublicPage />} />
     <Route path="/registro" element={<PublicPage registration />} />
+    <Route path="/agenda" element={<AgendaRoute />} />
     <Route path="/admin" element={<PrivatePage role="ADMIN" />} />
     <Route path="/admin/utilizadores" element={<PrivatePage role="ADMIN"><AdminUsersPage /></PrivatePage>} />
     <Route path="/recepcao" element={<PrivatePage role="RECEPTIONIST" />} />

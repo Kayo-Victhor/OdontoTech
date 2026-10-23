@@ -14,11 +14,16 @@ import { createAccountRoutes } from "./routes/accounts";
 import { createAuthService, type UserRepository } from "./services/auth";
 import { HttpError } from "./utils/http-error";
 import { emailSchema } from "./validators/accounts";
+import type { AppointmentRepository } from './repositories/appointments';
+import { readClinicConfig, type ClinicConfig } from './config/clinic';
+import { createAppointmentRoutes } from './routes/appointments';
 
 export function createApp(
   config: AuthConfig,
   users: UserRepository,
   accounts?: AccountRepository,
+  appointments?: AppointmentRepository,
+  clinic: ClinicConfig = readClinicConfig(),
 ) {
   const app = express();
   app.disable("x-powered-by");
@@ -66,6 +71,7 @@ export function createApp(
   });
   app.use("/auth", auth);
   app.use(createAccountRoutes(config, service, accounts));
+  if (appointments) app.use('/appointments', createAppointmentRoutes(config, service, appointments, clinic));
   app.use((_req, res) => {
     res.status(404).json({ message: "Rota não encontrada" });
   });

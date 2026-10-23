@@ -5,7 +5,9 @@
   "scripts": {
     "test": "node --import tsx --test tests/*.test.ts",
     "dev": "tsx watch src/server.ts",
-    "db:test": "node --import tsx src/scripts/test-database.ts",
+    "db:test": "node --env-file=.env.test --import tsx src/scripts/test-database.ts",
+    "db:test:migrate": "node --env-file=.env.test --import tsx src/scripts/migrate-test-database.ts",
+    "db:test:setup": "npm run db:test:migrate && npm run db:test",
     "build": "tsc",
     "start": "node dist/server.js",
     "prisma:generate": "prisma generate",
@@ -25,12 +27,14 @@
     "express": "^5.3.0",
     "express-rate-limit": "^8.7.1",
     "jsonwebtoken": "^9.0.3",
+    "luxon": "^3.7.2",
     "zod": "^4.6.7"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/jsonwebtoken": "^9.0.10",
+    "@types/luxon": "^3.7.6",
     "@types/node": "^26.6.5",
     "@types/supertest": "^7.2.1",
     "prisma": "6.12.0",

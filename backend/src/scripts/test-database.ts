@@ -1,12 +1,14 @@
 import { createDatabaseClient } from '../config/database';
+import { getSafeTestDatabaseUrl } from './test-database-config';
 
 async function main() {
+  getSafeTestDatabaseUrl();
   const database = createDatabaseClient();
   try {
     await database.$connect();
     const rows = await database.$queryRaw<Array<{ connected: number | bigint }>>`SELECT 1 AS connected`;
     if (Number(rows[0]?.connected) !== 1) throw new Error('A consulta de teste não retornou o resultado esperado.');
-    console.log('Conexão com MySQL confirmada. Consulta SELECT 1 executada com sucesso.');
+    console.log('Conexão com a base MySQL de teste confirmada. Consulta SELECT 1 executada com sucesso.');
   } finally {
     await database.$disconnect();
   }
@@ -24,7 +26,7 @@ main().catch((error: unknown) => {
   };
   // Nunca imprimir erros do driver: podem conter a URL com credenciais.
   const message = code ? messages[code] || `Falha na conexão MySQL (${code}).`
-    : error instanceof Error && /^(Configure |DB_PORT |DATABASE_URL )/.test(error.message)
+    : error instanceof Error && /^(Configure |DB_PORT |DATABASE_URL |A base de teste )/.test(error.message)
       ? error.message : 'Falha na conexão MySQL. Verifique a configuração em backend/.env.';
   console.error(message);
   process.exitCode = 1;

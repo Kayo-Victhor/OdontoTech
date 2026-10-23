@@ -2,6 +2,7 @@ import { createDatabaseClient } from "./config/database";
 import { readAuthConfig } from "./config/auth";
 import { createApp } from "./app";
 import { createAccountRepository } from "./repositories/accounts";
+import { createAppointmentRepository } from './repositories/appointments';
 
 async function main() {
   const config = readAuthConfig();
@@ -23,6 +24,7 @@ async function main() {
       findById: (id) => database.user.findUnique({ where: { id }, select }),
     },
     createAccountRepository(database),
+    createAppointmentRepository(database),
   );
   const server = app.listen(Number(process.env.PORT) || 3333, () =>
     console.log("API OdontoTech iniciada."),

@@ -11,6 +11,8 @@
     "dev": "concurrently -n backend,frontend -c blue,magenta \"npm run dev --workspace backend\" \"npm run dev --workspace frontend\"",
     "dev:backend": "npm run dev --workspace backend",
     "db:test": "npm run db:test --workspace backend",
+    "db:test:migrate": "npm run db:test:migrate --workspace backend",
+    "db:test:setup": "npm run db:test:setup --workspace backend",
     "dev:frontend": "npm run dev --workspace frontend",
     "build": "npm run build --workspace backend && npm run build --workspace frontend"
   },

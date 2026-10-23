@@ -60,6 +60,7 @@ export function AgendaPage() {
       <div className="appointment-summary"><strong>{formatTime(appointment.startAt, config!.timeZone)}–{formatTime(appointment.endAt, config!.timeZone)} · {appointment.patient.name}</strong><span className={`status-tag status-${appointment.status.toLowerCase()}`}>{statusNames[appointment.status]}</span></div>
       <p>{appointment.dentist.name}</p>
       <div className="appointment-actions">
+        {user?.role === 'DENTIST' && <Link to={`/prontuario/${appointment.id}`}>Prontuário</Link>}
         <button className="text-button" onClick={() => setDetailId(appointment.id)}>Consultar</button>
         {operational && ['SCHEDULED', 'CONFIRMED'].includes(appointment.status) && <button className="text-button" disabled={pending} onClick={() => setForm(appointment)}>Editar</button>}
         {transitions.map((status) => <button className="text-button" key={status} disabled={pending} onClick={() => { if (status === 'CANCELLED') setCancel(appointment); else void changeStatus(appointment, status); }}>{status === 'CANCELLED' ? 'Cancelar' : `Marcar: ${statusNames[status]}`}</button>)}

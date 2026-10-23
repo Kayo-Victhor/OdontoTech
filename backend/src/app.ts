@@ -17,6 +17,8 @@ import { emailSchema } from "./validators/accounts";
 import type { AppointmentRepository } from './repositories/appointments';
 import { readClinicConfig, type ClinicConfig } from './config/clinic';
 import { createAppointmentRoutes } from './routes/appointments';
+import type { ClinicalRepository } from './repositories/clinical';
+import { createClinicalRoutes } from './routes/clinical';
 
 export function createApp(
   config: AuthConfig,
@@ -24,6 +26,7 @@ export function createApp(
   accounts?: AccountRepository,
   appointments?: AppointmentRepository,
   clinic: ClinicConfig = readClinicConfig(),
+  clinical?: ClinicalRepository,
 ) {
   const app = express();
   app.disable("x-powered-by");
@@ -36,6 +39,7 @@ export function createApp(
     }),
   );
   app.use(protectCsrf(config));
+  app.use('/clinical', express.json({ limit: '32kb' }));
   app.use(express.json({ limit: "8kb" }));
   app.get("/health", (_req, res) => {
     res.json({ status: "ok" });
@@ -72,6 +76,7 @@ export function createApp(
   app.use("/auth", auth);
   app.use(createAccountRoutes(config, service, accounts));
   if (appointments) app.use('/appointments', createAppointmentRoutes(config, service, appointments, clinic));
+  if (clinical) app.use('/clinical', createClinicalRoutes(config, service, clinical, clinic));
   app.use((_req, res) => {
     res.status(404).json({ message: "Rota não encontrada" });
   });

@@ -80,7 +80,8 @@ model Procedure {
   id                       String              @id @default(cuid())
   name                     String
   description              String?             @db.Text
-  estimatedDurationMinutes Int
+  defaultPrice             Decimal?            @db.Decimal(10, 2)
+  estimatedDurationMinutes Int?
   isActive                 Boolean             @default(true)
   createdAt                DateTime            @default(now())
   updatedAt                DateTime            @updatedAt

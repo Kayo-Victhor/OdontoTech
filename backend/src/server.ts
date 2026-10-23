@@ -5,6 +5,8 @@ import { createAccountRepository } from "./repositories/accounts";
 import { createAppointmentRepository } from './repositories/appointments';
 import { createClinicalRepository } from './repositories/clinical';
 import { readClinicConfig } from './config/clinic';
+import { createBudgetRepository } from './repositories/budgets';
+import { createProcedureRepository } from './repositories/procedures';
 
 async function main() {
   const config = readAuthConfig();
@@ -29,6 +31,8 @@ async function main() {
     createAppointmentRepository(database),
     readClinicConfig(),
     createClinicalRepository(database),
+    createBudgetRepository(database),
+    createProcedureRepository(database),
   );
   const server = app.listen(Number(process.env.PORT) || 3333, () =>
     console.log("API OdontoTech iniciada."),

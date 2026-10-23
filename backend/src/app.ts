@@ -19,6 +19,10 @@ import { readClinicConfig, type ClinicConfig } from './config/clinic';
 import { createAppointmentRoutes } from './routes/appointments';
 import type { ClinicalRepository } from './repositories/clinical';
 import { createClinicalRoutes } from './routes/clinical';
+import type { BudgetRepository } from './repositories/budgets';
+import { createBudgetRoutes } from './routes/budgets';
+import type { ProcedureRepository } from './repositories/procedures';
+import { createProcedureRoutes } from './routes/procedures';
 
 export function createApp(
   config: AuthConfig,
@@ -27,6 +31,8 @@ export function createApp(
   appointments?: AppointmentRepository,
   clinic: ClinicConfig = readClinicConfig(),
   clinical?: ClinicalRepository,
+  budgets?: BudgetRepository,
+  procedures?: ProcedureRepository,
 ) {
   const app = express();
   app.disable("x-powered-by");
@@ -77,6 +83,8 @@ export function createApp(
   app.use(createAccountRoutes(config, service, accounts));
   if (appointments) app.use('/appointments', createAppointmentRoutes(config, service, appointments, clinic));
   if (clinical) app.use('/clinical', createClinicalRoutes(config, service, clinical, clinic));
+  if (budgets) app.use('/budget-simulations', createBudgetRoutes(config, service, budgets, clinic));
+  if (procedures) app.use(createProcedureRoutes(config, service, procedures));
   app.use((_req, res) => {
     res.status(404).json({ message: "Rota não encontrada" });
   });

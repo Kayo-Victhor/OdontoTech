@@ -136,6 +136,41 @@ button:disabled { cursor: wait; opacity: .65; }
 .clinical-timeline > li { padding: 20px 0; border-bottom: 1px solid #dce5ee; }
 .clinical-timeline header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
 .clinical-addendum { border-top: 1px dashed #c9d6e2; padding-top: 12px; margin-top: 16px; }
+.budget-page h2 { font-size: 1.2rem; font-weight: 650; margin-bottom: 16px; }
+.budget-page h3 { font-weight: 650; margin: 24px 0 12px; }
+.budget-page p { line-height: 1.6; margin: 10px 0; overflow-wrap: anywhere; }
+.budget-input-columns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; align-items: start; }
+.budget-input-columns .clinical-panel { min-width: 0; }
+.budget-items, .budget-plans { padding: 0; list-style: none; }
+.budget-items > li { padding: 20px 0; border-bottom: 1px solid #dce5ee; }
+.budget-items input { border: 1px solid #c9d6e2; border-radius: 8px; padding: 10px; max-width: 150px; }
+.budget-total { font-size: 1.3rem; margin: 24px 0 !important; }
+.budget-plans { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.budget-plans > li { border-left: 3px solid #079f9a; padding: 14px; background: #f6fafb; }
+.budget-disclaimer { border: 1px solid #c8e5e2; background: #edf9f7; padding: 16px; border-radius: 8px; }
+.catalog-page { max-width: 1240px; }
+.catalog-page .admin-columns { grid-template-columns: minmax(280px, 320px) minmax(0, 1fr); gap: 24px; }
+.catalog-page > p { margin: 16px 0 24px; line-height: 1.6; }
+.catalog-page .users-table { min-width: 560px; }
+.catalog-page .users-table td:nth-child(2), .catalog-unpriced { white-space: nowrap; }
+.catalog-checkbox { display: flex; align-items: center; gap: 10px; font-size: .9rem; margin: 16px 0; }
+.catalog-checkbox input { width: 18px; height: 18px; accent-color: #079f9a; }
+.catalog-actions { display: grid; gap: 12px; min-width: 76px; }
+.catalog-unpriced { color: #795b0d !important; font-weight: 600; }
+.catalog-page .registration-form > h2 { margin-bottom: 20px; }
+.catalog-page .registration-form .submit-button { margin: 18px 0; }
+@media(max-width: 850px) { .catalog-page .admin-columns { grid-template-columns: 1fr; } }
+@media(max-width: 700px) { .budget-input-columns, .budget-plans { grid-template-columns: 1fr; } }
+@media print {
+  body:has(.budget-page) { background: white; color: black; }
+  .budget-controls, .budget-print-button { display: none !important; }
+  .budget-page { padding: 0; max-width: none; }
+  .budget-summary { border: 0; padding: 0; margin: 0; box-shadow: none; }
+  .budget-summary .users-table-container { overflow: visible; }
+  .budget-summary th, .budget-summary td { color: black; white-space: normal; }
+  .budget-summary tr, .budget-plans > li { break-inside: avoid; }
+  .budget-plans { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
 @media(max-width: 700px) { .clinical-context { grid-template-columns: 1fr; } .clinical-panel, .clinical-history { padding: 18px; } .clinical-patient { position: static; padding: 16px; } }
 @media(max-width: 700px) {
   .agenda-toolbar { flex-direction: column; gap: 8px; }

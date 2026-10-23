@@ -1,8 +1,8 @@
 # OdontoTech
 
-Sistema web para gestão de clínicas odontológicas, com API REST e interface responsiva. O estado atual contempla autenticação, cadastro de pacientes, gestão administrativa de contas, agenda e prontuário clínico.
+Sistema web para gestão de clínicas odontológicas, com API REST e interface responsiva. O estado atual contempla autenticação, cadastro de pacientes, gestão administrativa de contas, agenda, prontuário clínico e simulação transitória de orçamentos.
 
-**Atualizado em:** 23/10/2026 — após a implementação do Bloco 5.
+**Atualizado em:** 23/10/2026 — após a implementação do Bloco 6.1.
 
 O projeto está em desenvolvimento. As funcionalidades descritas abaixo estão implementadas no código local; isso não significa que exista uma implantação de produção ou que o sistema tenha sido homologado para utilização clínica real.
 
@@ -11,14 +11,16 @@ O projeto está em desenvolvimento. As funcionalidades descritas abaixo estão i
 | Módulo | Situação |
 | --- | --- |
 | Estrutura e ambiente | Backend e frontend separados, npm workspaces e inicialização conjunta. |
-| Banco de dados | MySQL com Prisma, migration inicial e seed do administrador. PostgreSQL não é utilizado. |
+| Banco de dados | MySQL com Prisma, migration inicial, migration incremental do catálogo e seed do administrador. PostgreSQL não é utilizado. |
 | Autenticação | Login, logout, restauração de sessão, cookie HttpOnly, JWT e autorização por perfil. |
 | Cadastro de pacientes | Cadastro público integrado ao login, validação de dados e criação de PatientProfile. |
 | Gestão de utilizadores | Administrador cria dentistas/rececionistas e consulta contas com paginação. |
+| Catálogo de procedimentos | ADMIN cadastra/edita nome, descrição, preço Decimal, duração opcional e disponibilidade no MySQL; sem exclusão física. |
 | Agenda | Criação, listagem diária, filtros, detalhes, edição, cancelamento e transições de estado. |
 | Integridade da agenda | Bloqueios transacionais no MySQL para impedir sobreposição por dentista. |
 | Prontuário | Rascunhos, notas, procedimentos, snapshots históricos, finalização e aditamentos. |
 | Histórico do paciente | Consulta pessoal, paginada e apenas de registos finalizados. |
+| Simulação de orçamentos | Seleção de paciente/procedimentos, cálculo Decimal no backend, comparação de parcelas e resumo imprimível, sem persistência ou obrigações financeiras. |
 | Financeiro | Não implementado; sem orçamentos, faturação, parcelas ou pagamentos no schema atual. |
 
 As páginas iniciais de cada perfil são áreas simples de navegação. Não são dashboards completos com métricas ou relatórios.
@@ -35,7 +37,7 @@ As páginas iniciais de cada perfil são áreas simples de navegação. Não sã
 ```text
 OdontoTech/
 ├── backend/
-│   ├── prisma/             # Schema, migration inicial e seed
+│   ├── prisma/             # Schema, migrations versionadas e seed
 │   ├── src/
 │   │   ├── config/         # Banco, autenticação e horários da clínica
 │   │   ├── middlewares/    # Autenticação, autorização, CSRF e rate limiting
@@ -59,15 +61,15 @@ OdontoTech/
 └── README.md
 ```
 
-O schema contém User, PatientProfile, DentistProfile, Procedure, Appointment, ClinicalRecord, ClinicalProcedure e ClinicalAddendum. Existe uma migration inicial; os blocos de agenda e prontuário reutilizaram esses modelos sem acrescentar migrations artificiais.
+O schema contém User, PatientProfile, DentistProfile, Procedure, Appointment, ClinicalRecord, ClinicalProcedure e ClinicalAddendum. A agenda e o prontuário reutilizaram os modelos iniciais. O Bloco 6.1 acrescentou uma migration incremental para Procedure.defaultPrice (Decimal opcional) e duração opcional, preservando IDs e relações, sem preencher preços artificiais.
 
 ## 3. Perfis e permissões
 
 | Perfil | Acesso atual |
 | --- | --- |
-| ADMIN | Gestão de contas e operações da agenda. Sem acesso ao conteúdo clínico. |
+| ADMIN | Gestão de contas, catálogo/preços e operações da agenda. Sem acesso ao conteúdo clínico. |
 | RECEPTIONIST | Operações da agenda. Sem acesso ao conteúdo clínico. |
-| DENTIST | Consultas próprias, início/conclusão do atendimento e prontuários das consultas atribuídas ao seu perfil. |
+| DENTIST | Consultas próprias, início/conclusão do atendimento, prontuários autorizados e simulação de orçamentos para pacientes vinculados. |
 | PATIENT | Consultas próprias e histórico clínico próprio finalizado, apenas de leitura. |
 
 A autorização é aplicada no backend. Os seletores do login e os parâmetros enviados pelo navegador não concedem permissões. A identidade e o papel atual são confirmados na conta autenticada.
@@ -120,7 +122,7 @@ Numa instalação nova de desenvolvimento, depois de criar a base MySQL e confer
 
 ```sh
 npm run prisma:generate --workspace backend
-npm run prisma:migrate --workspace backend
+npm exec --workspace backend -- prisma migrate deploy
 npm run prisma:seed --workspace backend
 ```
 
@@ -150,8 +152,10 @@ Também existem `npm run dev:backend` e `npm run dev:frontend` para iniciar os p
 | /registro | Cadastro público de paciente, com senha e confirmação. |
 | /admin, /recepcao, /dentista, /paciente | Área inicial do perfil. |
 | /admin/utilizadores | Criação e listagem administrativa de contas. |
+| /admin/procedimentos | Gestão administrativa de procedimentos e preços no MySQL. |
 | /agenda | Agenda autorizada para cada perfil. |
 | /prontuario/:appointmentId | Prontuário do dentista responsável pela consulta. |
+| /dentista/orcamentos | Simulação de orçamentos, exclusiva do dentista, sem gravação de orçamento. |
 | /paciente/historico | Histórico pessoal finalizado do paciente. |
 
 ### Agenda
@@ -180,6 +184,16 @@ A finalização exige notas não vazias e pelo menos um procedimento, com confir
 
 As escritas usam transações, bloqueios de linha e verificação de versão para impedir alterações incompatíveis com uma finalização concorrente. O histórico do dentista fica limitado às consultas desse profissional; o paciente vê apenas os seus registos finalizados.
 
+### Simulação de orçamentos
+
+Na área do dentista, abrir **Simular orçamento**. Os pacientes devem estar ativos e ligados às consultas não canceladas desse profissional. Os procedimentos e os preços atuais vêm do catálogo MySQL. Não existem Budget ou BudgetItem persistidos.
+
+Antes de utilizar um procedimento no cálculo, entre como ADMIN, abra **Gerir procedimentos** e configure o preço real no catálogo. Preço vazio significa não configurado e impede a simulação desse item; zero explícito é permitido. As alterações são gravadas no banco e usadas no próximo cálculo, sem reiniciar a API. A configuração antiga de preços por ambiente deixou de ser necessária; nenhum `.env` privado foi editado automaticamente.
+
+O cadastro de preço exige até duas casas decimais, sem arredondamento silencioso de precisão extra. O backend usa Prisma.Decimal e HALF_UP nos cálculos, com ajuste dos centavos na última parcela. A comparação inclui 1, 3, 6 e 12 parcelas, sem juros. O resumo pode ser impresso via navegador com aviso de estimativa, não recibo ou obrigação financeira.
+
+A simulação permanece apenas na página, sem gravação/recuperação de rascunho ou tabelas de orçamento. A migration do Bloco 6.1 altera somente o catálogo existente. Consulte [Catálogo, preços e simulação](backend/BUDGETS.md) para permissões, migration e regras de arredondamento.
+
 ## 6. Organização da API
 
 Os caminhos seguintes são relativos à API. No frontend local, recebem o prefixo `/api` através do proxy.
@@ -195,6 +209,8 @@ Os caminhos seguintes são relativos à API. No frontend local, recebem o prefix
 | Procedimentos/finalização/aditamentos | POST /clinical/appointments/:id/procedures, /finalize e /addenda. |
 | Histórico | GET /clinical/appointments/:id/history e GET /clinical/history. |
 | Catálogo | GET /clinical/catalog. |
+| Catálogo administrativo | GET /procedures; GET e POST /admin/procedures; PATCH /admin/procedures/:id. |
+| Simulação de orçamentos | GET /budget-simulations/patients, GET /budget-simulations/procedures e POST /budget-simulations/simulate. |
 
 Escritas exigem Origin igual a FRONTEND_ORIGIN e o cabeçalho `X-OdontoTech-CSRF: 1`, além da sessão quando aplicável. O cliente HTTP do frontend já configura credenciais e o cabeçalho CSRF. As regras completas e os campos aceites estão nas documentações específicas ao final deste ficheiro.
 
@@ -212,21 +228,21 @@ Comandos adicionais:
 - `npm run prisma:validate --workspace backend`: validação do schema.
 - `git diff --check`: verificação do diff.
 
-Na última execução completa do Bloco 5, em 23/10/2026:
+Na última execução completa do Bloco 6.1, em 23/10/2026:
 
 | Verificação | Resultado |
 | --- | --- |
-| Backend | 55 testes aprovados, nenhum omitido. |
-| Frontend | 53 testes aprovados. |
+| Backend | 80 testes aprovados, nenhum omitido. |
+| Frontend | 92 testes aprovados. |
 | Regressões | Autenticação, cadastro, contas, agenda e permissões aprovados. |
-| MySQL isolado | Dois testes de integração aprovados: agenda e prontuário. |
+| MySQL isolado | Quatro testes de integração aprovados: agenda, prontuário, catálogo/simulação e preservação de dados pelo SQL incremental em tabela temporária. |
 | TypeScript e builds | Aprovados nos dois projetos. |
-| Revisão visual desktop | Fluxo dentista → prontuário → finalização → aditamento → histórico do paciente verificado com API e MySQL de testes. |
+| Revisão visual desktop | Cadastro, edição de preço, confirmação/desativação, reativação e simulação pelo dentista com preço atualizado verificados com API e MySQL de testes. O diálogo nativo de impressão não pôde ser inspecionado no bloco anterior. |
 | Lint | Não há configuração no projeto. |
 
-Os testes com mocks verificam regras e estados da interface; não comprovam locks do banco. Os testes MySQL reais verificaram concorrência de agendamentos, unicidade do prontuário, rollback, snapshots e disputa de edição/procedimentos com finalização. A revisão visual não substitui auditoria completa de acessibilidade nem validação mobile em dispositivos reais.
+Os testes com mocks verificam regras e estados da interface; não comprovam locks do banco. Os testes MySQL reais verificaram concorrência de agendamentos, unicidade do prontuário, rollback, snapshots, disputa de edição/procedimentos com finalização e simulação decimal com referências reais sem alterar consultas. A impressão usa window.print, coberta por teste automatizado; impressão física e saída PDF não foram validadas. A revisão visual não substitui auditoria completa de acessibilidade nem validação mobile em dispositivos reais.
 
-Esses resultados descrevem a execução anterior à redação deste README; não representam uma nova execução de testes motivada apenas pela alteração documental.
+Esses resultados correspondem à execução realizada após a implementação funcional do Bloco 6.1. Prisma validou o schema; o SQL foi gerado/inspecionado e aplicado primeiro à base isolada e depois à base local de desenvolvimento, com comparação dos registros antes/depois. Não houve reset, preenchimento de preços ou alteração de credenciais. A documentação foi atualizada após essa execução.
 
 ### Base de testes isolada
 
@@ -255,9 +271,9 @@ Sem configuração isolada, as integrações são omitidas com mensagem explíci
 
 ## 9. Fora do escopo e próximos passos
 
-Ainda não foram implementados: financeiro, orçamentos, pagamentos, relatórios globais, odontograma gráfico, gestão do catálogo de procedimentos, recuperação de senha, exportação de prontuários, assinatura digital ou partilha pública.
+Ainda não foram implementados: financeiro, orçamentos persistidos/formais, pagamentos, relatórios globais, odontograma gráfico, recuperação de senha, exportação de prontuários, assinatura digital ou partilha pública. A simulação transitória de orçamentos não gera pagamentos ou dívidas. O catálogo e os preços já possuem gestão administrativa no Bloco 6.1.
 
-O botão de recuperação de senha da interface não corresponde a um fluxo de recuperação implementado. A presença do modelo Procedure e da leitura de catálogo também não significa que exista uma interface para gerir esse catálogo.
+O botão de recuperação de senha da interface não corresponde a um fluxo de recuperação implementado. A gestão de catálogo não permite exclusão física nem constitui um módulo financeiro.
 
 Possíveis próximos passos, a definir conforme a simplicidade desejada: homologação com utilizadores, validação mobile/acessibilidade, recuperação de acesso e preparação de operação/backup antes de qualquer utilização real. Financeiro só deve ser iniciado se voltar a fazer parte do escopo solicitado.
 
@@ -266,6 +282,7 @@ Possíveis próximos passos, a definir conforme a simplicidade desejada: homolog
 - [Autenticação e contas](backend/AUTH.md).
 - [Agenda e concorrência](backend/AGENDA.md).
 - [Prontuário, permissões e imutabilidade](backend/CLINICAL.md).
+- [Simulação de orçamentos e configuração de preços](backend/BUDGETS.md).
 - [Banco, regras e base de testes](backend/prisma/README.md).
 - [Exemplo de ambiente backend](backend/.env.example).
 - [Exemplo de ambiente frontend](frontend/.env.example).

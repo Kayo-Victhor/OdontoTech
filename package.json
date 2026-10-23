@@ -7,6 +7,7 @@
     "frontend"
   ],
   "scripts": {
+    "test": "npm run test --workspace backend && npm run test --workspace frontend",
     "dev": "concurrently -n backend,frontend -c blue,magenta \"npm run dev --workspace backend\" \"npm run dev --workspace frontend\"",
     "dev:backend": "npm run dev --workspace backend",
     "db:test": "npm run db:test --workspace backend",

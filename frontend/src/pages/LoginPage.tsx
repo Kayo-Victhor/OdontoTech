@@ -1,4 +1,6 @@
-import { useState, type FormEvent } from 'react';
+import { useRef, useState, type FormEvent } from 'react';
+import { useAuth } from '../auth/AuthProvider';
+import { authErrorMessage } from '../services/api';
 import {
   Eye,
   EyeOff,
@@ -20,11 +22,20 @@ const profiles: Array<{ label: Profile; icon: typeof UserRound }> = [
 export function LoginPage({ onRegister }: { onRegister: () => void }) {
   const [profile, setProfile] = useState<Profile>('Administrador');
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
-  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [pending, setPending] = useState(false);
+  const submitting = useRef(false);
+  const [error, setError] = useState('');
+  const { login } = useAuth();
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setIsSubmitted(true);
+    if (submitting.current) return;
+    const form = new FormData(event.currentTarget);
+    submitting.current = true;
+    setPending(true); setError('');
+    try { await login(String(form.get('email') || '').trim().toLowerCase(), String(form.get('password') || '')); }
+    catch (failure) { setError(authErrorMessage(failure)); }
+    finally { submitting.current = false; setPending(false); }
   }
 
   return (
@@ -55,6 +66,7 @@ export function LoginPage({ onRegister }: { onRegister: () => void }) {
               <button
                 className={profile === label ? 'profile-option profile-option--active' : 'profile-option'}
                 key={label}
+                aria-pressed={profile === label}
                 onClick={() => setProfile(label)}
                 type="button"
               >
@@ -88,15 +100,11 @@ export function LoginPage({ onRegister }: { onRegister: () => void }) {
             </span>
           </label>
 
-          <button className="submit-button" type="submit">Entrar</button>
-          <button className="forgot-password" type="button">Esqueceu a palavra-passe?</button>
+          <button className="submit-button" disabled={pending} type="submit">{pending ? 'A entrar…' : 'Entrar'}</button>
+          <button className="forgot-password" onClick={() => setError('Para recuperar o acesso, contacte a administração da clínica.')} type="button">Esqueceu a palavra-passe?</button>
           <p className="login-switch">Ainda não tem uma conta? <button onClick={onRegister} type="button">Registre-se</button></p>
 
-          {isSubmitted && (
-            <p aria-live="polite" className="form-message">
-              A autenticação será disponibilizada em breve para o perfil {profile}.
-            </p>
-          )}
+          {error && <p role="alert" className="form-message form-message--error">{error}</p>}
         </form>
       </section>
     </main>

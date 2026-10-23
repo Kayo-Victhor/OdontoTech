@@ -12,6 +12,10 @@ body { margin: 0; min-width: 320px; background: #fff; }
 
 button, input { font: inherit; }
 button { cursor: pointer; }
+button:disabled { cursor: wait; opacity: .65; }
+.session-state { min-height: 100svh; max-width: 520px; margin: auto; padding: 32px 24px; display: flex; flex-direction: column; justify-content: center; gap: 16px; text-align: center; }
+.session-state h1 { font-size: 1.6rem; }
+.form-message--error { color: #a33139; }
 
 .sr-only {
   position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
